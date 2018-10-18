@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import cecs429.documents.DirectoryCorpus;
 import cecs429.documents.Document;
 import cecs429.documents.DocumentCorpus;
+import cecs429.index.DiskIndexWriter;
 import cecs429.index.Index;
 import cecs429.index.PositionalInvertedIndex;
 import cecs429.index.Posting;
@@ -52,7 +53,9 @@ public class PositionalTermDocumentIndexer {
 		double executionTime = TimeUnit.SECONDS.convert(elapsedTime, TimeUnit.NANOSECONDS);
 		// Print out the time taken to load and index the documents
 		System.out.println("Time taken to load documents and index corpus in seconds:" + executionTime);
-		boolean choice = true;
+		DiskIndexWriter dw = new DiskIndexWriter();
+		dw.writeIndex(index, "src/index");
+		/*boolean choice = true;
 		do {
 			System.out.println("\nSpecial terms to search for operations:");
 			System.out.println(":q - exit the program.");
@@ -98,7 +101,7 @@ public class PositionalTermDocumentIndexer {
 			} else {
 				System.out.println("Please enter a valid search term!");
 			}
-		} while (choice);
+		} while (choice);*/
 
 	}
 

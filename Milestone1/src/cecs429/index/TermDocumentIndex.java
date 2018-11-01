@@ -1,6 +1,9 @@
 package cecs429.index;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Implements an Index using a term-document matrix. Requires knowing the full corpus vocabulary and number of documents

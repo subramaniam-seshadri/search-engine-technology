@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -12,6 +13,8 @@ import cecs429.documents.DirectoryCorpus;
 import cecs429.documents.Document;
 import cecs429.documents.DocumentCorpus;
 import cecs429.index.DiskIndexWriter;
+import cecs429.index.DiskPositionalIndex;
+import cecs429.index.DiskPositionalIndex1;
 import cecs429.index.Index;
 import cecs429.index.PositionalInvertedIndex;
 import cecs429.text.AdvancedTokenProcessor;
@@ -52,6 +55,12 @@ public class PositionalTermDocumentIndexer {
 		System.out.println("Time taken to load documents and index corpus in seconds:" + executionTime);
 		DiskIndexWriter dw = new DiskIndexWriter();
 		dw.writeIndex(index, "src/index");
+		DiskPositionalIndex1 di1 = new DiskPositionalIndex1();
+		di1.getPostings("whale");
+		DiskPositionalIndex di = new DiskPositionalIndex();
+		TokenProcessor processor = new AdvancedTokenProcessor();
+		List<String> termToSearch = processor.processToken("improve");
+		di.getPostings(termToSearch.get(0));
 		/*boolean choice = true;
 		do {
 			System.out.println("\nSpecial terms to search for operations:");
@@ -136,7 +145,10 @@ public class PositionalTermDocumentIndexer {
 		TokenProcessor processor = new AdvancedTokenProcessor();
 		Iterable<Document> documentList = corpus.getDocuments();
 		PositionalInvertedIndex index = new PositionalInvertedIndex();
+		
 		for (Document doc : documentList) {
+			HashMap<String, Integer> termFrequencyMap = new HashMap<String, Integer>(); //create termFrequencyMap which maps the term 
+			//frequencies for terms occurring in the document during indexing
 			System.out.println("Indexing Document :" + doc.getTitle());
 			EnglishTokenStream docStream = new EnglishTokenStream(doc.getContent());
 
@@ -147,8 +159,21 @@ public class PositionalTermDocumentIndexer {
 				i += 1;
 				List<String> processedTokens = processor.processToken(tokens);
 				for (String processedToken : processedTokens) {
+					if(termFrequencyMap.containsKey(processedToken)) {
+						int termFrequency = termFrequencyMap.get(processedToken);
+						termFrequency += 1;
+						termFrequencyMap.put(processedToken, termFrequency);
+					}else {
+						termFrequencyMap.put(processedToken, 1);
+					}
 					index.addTerm(processedToken, doc.getId(), i);
 				}
+			}
+			DiskIndexWriter dw = new DiskIndexWriter();
+			try {
+				dw.createDocWeightsFile("src/index",termFrequencyMap); // write it out to a file
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 		}
 		return index;

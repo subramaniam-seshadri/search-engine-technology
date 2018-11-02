@@ -1,4 +1,4 @@
-package cecs429.index;
+  package cecs429.index;
 
 import java.io.DataInputStream;
 import java.io.FileInputStream;

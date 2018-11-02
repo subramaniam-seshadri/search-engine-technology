@@ -57,7 +57,7 @@ public class PositionalTermDocumentIndexer {
 		dw.writeIndex(index, "src/index");
 		DiskPositionalIndex1 di1 = new DiskPositionalIndex1();
 		di1.getPostings("whale");
-		DiskPositionalIndex di = new DiskPositionalIndex();
+		DiskPositionalIndex di = new DiskPositionalIndex("src/index");
 		TokenProcessor processor = new AdvancedTokenProcessor();
 		List<String> termToSearch = processor.processToken("improve");
 		di.getPostings(termToSearch.get(0));

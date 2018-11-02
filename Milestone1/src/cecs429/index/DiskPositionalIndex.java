@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,13 +20,25 @@ public class DiskPositionalIndex implements Index {
 		System.out.println("Posting Position List Size:" + postingPositionTable.size());
 		// list lengths should be same. For each term position in vocabPositionTable,
 		// there is a corresponding value in postingPositionTable list
+		RandomAccessFile raf = null;
+		try {
+			raf = new RandomAccessFile("src//index" + "//vocab.bin","r");
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		}
+		
+		
+		
 		FileInputStream inputStream = null;
 		try {
 			inputStream = new FileInputStream("src//index" + "//vocab.bin");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		binarySearchVocab(term, 0, vocabPositionTable.size()-1, inputStream);
+		
+		
+		
+		binarySearchVocab(term, 0, vocabPositionTable.size()-1, raf);
 		return null;
 	}
 
@@ -54,13 +67,14 @@ public class DiskPositionalIndex implements Index {
 	 * @return 0 if term and fetched term match, 1 if term is greater than fetched
 	 *         term, -1 if term is smaller than fetched term
 	 */
-	public int searchTerm(Long startPosition, Long noOfBytesToRead, String term, FileInputStream inputStream) {
+	public int searchTerm(Long startPosition, Long noOfBytesToRead, String term, RandomAccessFile raf) {
 		String data = "";
 		try {
-			inputStream.skip(startPosition);
+			raf.seek(startPosition);
+			//inputStream.skip(startPosition);
 
 			for (int i = 0; i < noOfBytesToRead; i++) {
-				data += (char) inputStream.read();
+				data += (char) raf.readByte();
 			}
 			System.out.println(data);
 			if (term.equals(data)) {
@@ -68,8 +82,10 @@ public class DiskPositionalIndex implements Index {
 			} else {
 				int result = data.compareTo(term);
 				if (result < 0) {
+					raf.seek(0);
 					return -1;
 				} else {
+					raf.seek(0);
 					return 1;
 				}
 			}
@@ -79,26 +95,26 @@ public class DiskPositionalIndex implements Index {
 		return 0;
 	}
 
-	public int binarySearchVocab(String term, int startIndex, int endIndex, FileInputStream inputStream) {
+	public int binarySearchVocab(String term, int startIndex, int endIndex, RandomAccessFile raf) {
 		while (startIndex <= endIndex) {
 			int midIndex = (startIndex + endIndex) / 2;
 			if (midIndex < vocabPositionTable.size() - 1) { // not the last element, can get the next element
 				Long midPosition = vocabPositionTable.get(midIndex);
 				Long nextMidPosition = vocabPositionTable.get(midIndex + 1);
 				Long noOfBytesToRead = nextMidPosition - midPosition;
-				int result = searchTerm(midPosition, noOfBytesToRead, term, inputStream);
+				int result = searchTerm(midPosition, noOfBytesToRead, term, raf);
 				if (result == 0) {
 					return midIndex;
 				} else if (result < 0) {
-					return binarySearchVocab(term,midIndex + 1, endIndex, inputStream);
+					return binarySearchVocab(term,midIndex + 1, endIndex, raf);
 				} else {
-					return binarySearchVocab(term, startIndex, midIndex, inputStream);
+					return binarySearchVocab(term, startIndex, midIndex, raf);
 				}
 			} else { // last element of the list
 				try {
 					Long midPosition = vocabPositionTable.get(midIndex);
-					Long noOfBytesToRead = inputStream.getChannel().size();
-					return searchTerm(midPosition, noOfBytesToRead, term, inputStream);
+					Long noOfBytesToRead = raf.length();
+					return searchTerm(midPosition, noOfBytesToRead, term, raf);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}

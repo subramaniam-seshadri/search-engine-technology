@@ -1,4 +1,4 @@
-package cecs429.index;
+/*package cecs429.index;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,3 +40,4 @@ public class InvertedIndex implements Index {
 		}
 	}
 }
+*/

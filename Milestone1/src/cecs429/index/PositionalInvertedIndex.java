@@ -14,7 +14,7 @@ public class PositionalInvertedIndex implements Index {
 	HashMap<String, List<Posting>> vocabulary = new HashMap<String, List<Posting>>();
 
 	@Override
-	public List<Posting> getPostings(String term) {
+	public List<Posting> getPositionalPostings(String term) {
 		List<Posting> results = new ArrayList<>();
 		results = vocabulary.get(term);
 		return results;

@@ -71,8 +71,8 @@ public class PhraseLiteral implements QueryComponent {
 
 			String term1 = Terms.get(i);
 			String term2 = Terms.get(--i);
-			List<Posting> postingResult1 = index.getPostings(term1);
-			List<Posting> postingResult2 = index.getPostings(term2);
+			List<Posting> postingResult1 = index.getPositionalPostings(term1);
+			List<Posting> postingResult2 = index.getPositionalPostings(term2);
 
 			if (CollectionUtils.isEmpty(postingResult1) || CollectionUtils.isEmpty(postingResult2)) {
 				return Collections.EMPTY_LIST;

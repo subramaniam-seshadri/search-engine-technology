@@ -47,7 +47,7 @@ public class DiskPositionalIndex implements Index {
 	}
 
 	@Override
-	public List<Posting> getPostings(String term) {
+	public List<Posting> getPositionalPostings(String term) {
 		List<Posting> result = null;
 		System.out.println("Vocab Position List Size:" + vocabPositionList.size());
 		System.out.println("Posting Position List Size:" + postingPositionList.size());
@@ -160,7 +160,44 @@ public class DiskPositionalIndex implements Index {
 
 	@Override
 	public List<String> getVocabulary() {
+		List<String> vocabularyList = new ArrayList<String>();
+		RandomAccessFile raf = null;
+		for (int i = 0; i < vocabPositionList.size(); i++) {
+			try {
+				raf = new RandomAccessFile(path + "//vocab.bin", "r");
+				if (i == (vocabPositionList.size() - 1)) {
+					// last element of list, read from this position till end of file
+					Long startPosition = vocabPositionList.get(i);
+					raf.seek(0);
+					Long nextPosition = raf.length();
+					vocabularyList.add(readTerm(startPosition, nextPosition, raf));
+				} else {
+					// not last element read till next position
+					Long startPosition = vocabPositionList.get(i);
+					Long nextPosition = vocabPositionList.get(i + 1);
+					vocabularyList.add(readTerm(startPosition, nextPosition, raf));
+				}
+			} catch (FileNotFoundException e1) {
+				e1.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return vocabularyList;
+	}
 
-		return null;
+	public static String readTerm(Long startPosition, Long nextPosition, RandomAccessFile raf) {
+		Long numberOfBytesToRead = nextPosition - startPosition;
+		String data = "";
+		try {
+			raf.seek(startPosition);
+			for (int i = 0; i < numberOfBytesToRead; i++) {
+				data += (char) raf.readByte();
+			}
+			System.out.println(data);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return data;
 	}
 }

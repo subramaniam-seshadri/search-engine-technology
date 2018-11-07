@@ -10,8 +10,33 @@ import java.util.HashMap;
 import java.util.List;
 
 public class DiskIndexWriter {
+	
+	private String path;
+	private HashMap<String, Integer> termFrequencyMap;
+	private Index index;
+	
+	
+	/** Constructor to initialize things that will be needed to write index to disk. 
+	 * 
+	 * @param path - where the bin files will be generated
+	 * @param index - index to write to disk
+	 */
+	public DiskIndexWriter(String path, Index index) {
+		this.path = path;
+		this.index = index;
+	}
+	
+	/** Constructor to initialize things that will be needed to write document weights to disk. 
+	 * 
+	 * @param path - where the bin files will be generated
+	 * @param termFrequencyMap - using which document weights will be calculated
+	 */
+	public DiskIndexWriter(String path, HashMap<String, Integer> termFrequencyMap) {
+		this.path = path;
+		this.termFrequencyMap = termFrequencyMap;
+	}
 
-	public void writeIndex(Index index, String path) {
+	public void writeIndex() {
 		List<String> vocabulary = index.getVocabulary();
 		try {
 			List<Long> vocabPositions = createVocabFile(path, vocabulary);
@@ -23,7 +48,7 @@ public class DiskIndexWriter {
 		}
 	}
 
-	public void createDocWeightsFile(String path, HashMap<String, Integer> termFrequencyMap) throws IOException {
+	public void createDocWeightsFile() throws IOException {
 		FileOutputStream outputStream = null;
 		DataOutputStream outStream = null;
 		try {

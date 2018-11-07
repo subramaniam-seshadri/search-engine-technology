@@ -174,6 +174,7 @@ public class PositionalTermDocumentIndexer {
 		Iterable<Document> documentList = corpus.getDocuments();
 		PositionalInvertedIndex index = new PositionalInvertedIndex();
 
+		
 		for (Document doc : documentList) {
 			HashMap<String, Integer> termFrequencyMap = new HashMap<String, Integer>(); // create termFrequencyMap which
 																						// maps the term
@@ -198,9 +199,9 @@ public class PositionalTermDocumentIndexer {
 					index.addTerm(processedToken, doc.getId(), i);
 				}
 			}
-			DiskIndexWriter dw = new DiskIndexWriter();
+			DiskIndexWriter dw = new DiskIndexWriter("src/index", termFrequencyMap);
 			try {
-				dw.createDocWeightsFile("src/index", termFrequencyMap); // write it out to a file
+				dw.createDocWeightsFile(); // write it out to a file
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -235,19 +236,10 @@ public class PositionalTermDocumentIndexer {
 
 		// clear write directory
 		String writeDirectory = "src/index";
-		try {
-			File dir = new File(writeDirectory);
-			for (File file : dir.listFiles())
-				if (!file.isDirectory())
-					FileUtils.cleanDirectory(file);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 
 		// write index to disk
-		DiskIndexWriter dw = new DiskIndexWriter();
-		dw.writeIndex(index, "src/index");
-
+		DiskIndexWriter dw = new DiskIndexWriter(writeDirectory, index);
+		dw.writeIndex();
 		System.out.println("Index created on disk on path: " + writeDirectory);
 	}
 

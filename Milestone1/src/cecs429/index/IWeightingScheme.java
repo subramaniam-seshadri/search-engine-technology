@@ -10,7 +10,7 @@ public interface IWeightingScheme {
 	 */
 	double getWqt(Integer N, Integer dft);
 
-	double getWd();
+	double getWdt(Integer tfd, Integer docID);
 
-	double getLd();
+	double getLd(Integer docID);
 }

@@ -1,6 +1,7 @@
 package cecs429.documents;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
 import java.io.StringReader;
@@ -79,5 +80,9 @@ public class JSONFileDocument implements FileDocument{
 	
 	public static FileDocument loadJSONFileDocument(Path absolutePath, int documentId) {
 		return new JSONFileDocument(documentId, absolutePath);
+	}
+	@Override
+	public Long getDocSize() {
+		return new File(mFilePath.toString()).length();
 	}
 }

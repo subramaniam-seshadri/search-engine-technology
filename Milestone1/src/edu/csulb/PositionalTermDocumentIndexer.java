@@ -1,24 +1,25 @@
 package edu.csulb;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.FileUtils;
-
 import cecs429.documents.DirectoryCorpus;
 import cecs429.documents.Document;
 import cecs429.documents.DocumentCorpus;
+import cecs429.index.DefaultWeightingScheme;
 import cecs429.index.DiskIndexWriter;
 import cecs429.index.DiskPositionalIndex;
+import cecs429.index.IWeightingScheme;
 import cecs429.index.Index;
 import cecs429.index.PositionalInvertedIndex;
+import cecs429.query.RankedRetrieval;
 import cecs429.text.AdvancedTokenProcessor;
 import cecs429.text.EnglishTokenStream;
 import cecs429.text.TokenProcessor;
@@ -43,7 +44,9 @@ public class PositionalTermDocumentIndexer {
 				}
 				case 2: // process queries from an on disk index
 				{
-					processQueries(br);
+					System.out.println("Please enter the path of the index on disk:");
+					String indexPath = "src/index";
+					processQueries(br, indexPath);
 					break;
 				}
 
@@ -122,7 +125,7 @@ public class PositionalTermDocumentIndexer {
 			String directoryPath = Paths.get(query.split("\\s+")[1]).toString();
 			DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(Paths.get(directoryPath).toAbsolutePath(),
 					".txt");
-			index = indexCorpus(corpus);
+			// index = indexCorpus(corpus);
 		} else if (query.contains(":vocab")) {
 			List<String> vocabulary = index.getVocabulary();
 			System.out.println("First 1000 terms in vocabulary are as follows:");
@@ -173,13 +176,13 @@ public class PositionalTermDocumentIndexer {
 		TokenProcessor processor = new AdvancedTokenProcessor();
 		Iterable<Document> documentList = corpus.getDocuments();
 		PositionalInvertedIndex index = new PositionalInvertedIndex();
+		List<Long> avgDocLength = new ArrayList<Long>();
 
-		
 		for (Document doc : documentList) {
 			HashMap<String, Integer> termFrequencyMap = new HashMap<String, Integer>(); // create termFrequencyMap which
 																						// maps the term
 			// frequencies for terms occurring in the document during indexing
-			System.out.println("Indexing Document :" + doc.getTitle());
+			System.out.println("Indexing Document :" + doc.getTitle() + "DocID: " + doc.getId());
 			EnglishTokenStream docStream = new EnglishTokenStream(doc.getContent());
 
 			Iterable<String> docTokens = docStream.getTokens();
@@ -201,11 +204,20 @@ public class PositionalTermDocumentIndexer {
 			}
 			DiskIndexWriter dw = new DiskIndexWriter("src/index", termFrequencyMap);
 			try {
-				dw.createDocWeightsFile(); // write it out to a file
+				avgDocLength.add(dw.createDocWeightsFile(doc.getDocSize())); // write it out to a file
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
+
+		// write docLengthA - avg number of tokens in all documents in the corpus
+		DiskIndexWriter dw = new DiskIndexWriter("src/index");
+		try {
+			dw.writeAvgDocLength(avgDocLength);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
 		return index;
 	}
 
@@ -234,7 +246,6 @@ public class PositionalTermDocumentIndexer {
 		// Print out the time taken to load and index the documents
 		System.out.println("Time taken to load documents and index corpus in seconds:" + executionTime);
 
-		// clear write directory
 		String writeDirectory = "src/index";
 
 		// write index to disk
@@ -243,7 +254,8 @@ public class PositionalTermDocumentIndexer {
 		System.out.println("Index created on disk on path: " + writeDirectory);
 	}
 
-	public static void processQueries(BufferedReader br) {
+	public static void processQueries(BufferedReader br, String indexPath) {
+		TokenProcessor processor = new AdvancedTokenProcessor();
 		System.out.println("Select mode for performing query searches");
 		boolean modeBool = true;
 		int searchMode = 0;
@@ -280,7 +292,18 @@ public class PositionalTermDocumentIndexer {
 					break;
 				}
 				case 2: {
+					System.out.print("\nPlease enter query to be searched: ");
+					String query = "";
+					try {
+						query = br.readLine();
+						IWeightingScheme weightingScheme = new DefaultWeightingScheme(indexPath);
+						RankedRetrieval rr = new RankedRetrieval(weightingScheme, query, indexPath);
+						rr.getNumberOfDocs();
+						rr.getRankedDocuments(query,processor);
 
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
 					break;
 				}
 				default:
@@ -328,7 +351,7 @@ public class PositionalTermDocumentIndexer {
 
 		// Load files from directory and read
 		// DocumentCorpus corpus =
-		// DirectoryCorpus.loadJSONFileDirectory(Paths.get(directoryPath), ".json");
+		// DirectoryCorpus.loadJSONFileDirectory(Paths.get(corpusDirectory), ".json");
 		System.out.println(
 				"\nFound " + corpus.getCorpusSize() + " documents in the directory. Indexing the documents...\n");
 		// Index the corpus by calling indexCorpus() method

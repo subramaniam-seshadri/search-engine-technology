@@ -10,25 +10,31 @@ import java.util.HashMap;
 import java.util.List;
 
 public class DiskIndexWriter {
-	
+
 	private String path;
 	private HashMap<String, Integer> termFrequencyMap;
 	private Index index;
-	
-	
-	/** Constructor to initialize things that will be needed to write index to disk. 
+
+	/**
+	 * Constructor to initialize things that will be needed to write index to disk.
 	 * 
-	 * @param path - where the bin files will be generated
+	 * @param path  - where the bin files will be generated
 	 * @param index - index to write to disk
 	 */
 	public DiskIndexWriter(String path, Index index) {
 		this.path = path;
 		this.index = index;
 	}
-	
-	/** Constructor to initialize things that will be needed to write document weights to disk. 
+
+	public DiskIndexWriter(String path) {
+		this.path = path;
+	}
+
+	/**
+	 * Constructor to initialize things that will be needed to write document
+	 * weights to disk.
 	 * 
-	 * @param path - where the bin files will be generated
+	 * @param path             - where the bin files will be generated
 	 * @param termFrequencyMap - using which document weights will be calculated
 	 */
 	public DiskIndexWriter(String path, HashMap<String, Integer> termFrequencyMap) {
@@ -42,27 +48,43 @@ public class DiskIndexWriter {
 			List<Long> vocabPositions = createVocabFile(path, vocabulary);
 			List<Long> postingsPositions = createPostingsFile(index, path, vocabulary);
 			createVocabTable(path, vocabulary, vocabPositions, postingsPositions);
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	public void createDocWeightsFile() throws IOException {
+	public Long createDocWeightsFile(Long fileByteSize) throws IOException {
 		FileOutputStream outputStream = null;
 		DataOutputStream outStream = null;
+		Long docLength = 0L;
 		try {
-			outputStream = new FileOutputStream(path + "//docWeights.bin");
+			outputStream = new FileOutputStream(path + "//docWeights.bin",true);
 			outStream = new DataOutputStream(new BufferedOutputStream(outputStream));
-			//for each term in map calculate wd,t for that term.
+			// for each term in map add frequency of that term to docLength to get total
+			// number of tokens in document
+
+			List<Integer> frequencyList = new ArrayList<Integer>();
+
+			// for each term in map calculate wd,t for that term.
 			List<Double> wdtList = new ArrayList<Double>();
 			for (String key : termFrequencyMap.keySet()) {
-				double wdt = (1 + Math.log(termFrequencyMap.get(key))); 
-				wdtList.add(wdt*wdt);
+				frequencyList.add(termFrequencyMap.get(key));
+				docLength += termFrequencyMap.get(key);
+				double wdt = (1 + Math.log(termFrequencyMap.get(key)));
+				wdtList.add(wdt * wdt);
 			}
+			int sumFrequency = frequencyList.stream().mapToInt(Integer::intValue).sum();
+			double avgTfd = ((double) sumFrequency) / ((double) frequencyList.size());
 			double Ld = Math.sqrt(wdtList.stream().mapToDouble(Double::doubleValue).sum());
-			//System.out.println(Ld);
+			System.out.println("Doc weight:" + Ld);
+			System.out.println("Doc Length:" + docLength);
+			System.out.println("Doc Size in bytes:" + fileByteSize);
+			System.out.println("Avg term frequency in doc:" + avgTfd);
 			outStream.writeDouble(Ld);
+			outStream.writeLong(docLength);
+			outStream.writeLong(fileByteSize);
+			outStream.writeDouble(avgTfd);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} finally {
@@ -71,6 +93,7 @@ public class DiskIndexWriter {
 			outputStream.flush();
 			outputStream.close();
 		}
+		return docLength;
 	}
 
 	public List<Long> createPostingsFile(Index index, String path, List<String> vocabulary) throws IOException {
@@ -99,7 +122,7 @@ public class DiskIndexWriter {
 			previousPosition = outStream.size();
 
 			for (int i = 1; i < vocabulary.size(); i++) {
-				//System.out.println(vocabulary.get(i) + "-" + gap);
+				// System.out.println(vocabulary.get(i) + "-" + gap);
 				bytePositions.add((long) gap);
 				List<Posting> postings = pIndex.vocabulary.get(vocabulary.get(i));
 				outStream.writeInt(postings.size()); // doc frequency
@@ -169,7 +192,7 @@ public class DiskIndexWriter {
 			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
-		}finally {
+		} finally {
 			outStream.flush();
 			outStream.close();
 			outputStream.flush();
@@ -177,4 +200,31 @@ public class DiskIndexWriter {
 		}
 	}
 
+	/**
+	 * This function writes out the average number of tokens in all the documents in
+	 * the corpus to the docWeights.bin file. The value is appended to the end of
+	 * the file.
+	 * 
+	 * @param avgDocLength - List of Long containing the docLength for each of the
+	 *                     documents in the corpus
+	 */
+	public void writeAvgDocLength(List<Long> avgDocLength) throws IOException {
+		FileOutputStream outputStream = null;
+		DataOutputStream outStream = null;
+		long sumDocLength = avgDocLength.stream().mapToLong(Long::longValue).sum();
+		double avgTfd = ((double) sumDocLength) / ((double) avgDocLength.size());
+		try {
+			outputStream = new FileOutputStream(path + "//docWeights.bin", true);
+			outStream = new DataOutputStream(new BufferedOutputStream(outputStream));
+			System.out.println("Average doc Length for corpus: " + avgTfd);
+			outStream.writeDouble(avgTfd);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} finally {
+			outStream.flush();
+			outStream.close();
+			outputStream.flush();
+			outputStream.close();
+		}
+	}
 }

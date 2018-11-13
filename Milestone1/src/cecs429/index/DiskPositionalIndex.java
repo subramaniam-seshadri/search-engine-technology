@@ -63,7 +63,6 @@ public class DiskPositionalIndex implements Index {
 			}
 
 			result = retrievePostings(startPosition);
-			System.out.println(result);
 		} catch (FileNotFoundException e1) {
 			e1.printStackTrace();
 		}

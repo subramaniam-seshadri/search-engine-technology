@@ -6,18 +6,24 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-public class DefaultWeightingScheme implements IWeightingScheme {
+public class TfIdfWeightingScheme implements IWeightingScheme {
 
 	private String path;
 	
-	public DefaultWeightingScheme(String path) {
+	public TfIdfWeightingScheme(String path) {
 		this.path = path;
 	}
 	
 	@Override
+	public double getWqt(Integer N, Integer dft) {
+		
+		return Math.log(N/dft);
+	}
+
+	@Override
 	public double getWdt(Integer tfd, Integer docID) {
-		double wdt = (1 + Math.log(tfd));
-		return wdt;
+		
+		return tfd;
 	}
 
 	@Override
@@ -40,8 +46,6 @@ public class DefaultWeightingScheme implements IWeightingScheme {
 					} catch (EOFException e) {
 						e.printStackTrace();
 					}
-				}else {
-					indexIntoFile += 1;
 				}
 			}
 		} catch (FileNotFoundException e) {
@@ -51,12 +55,6 @@ public class DefaultWeightingScheme implements IWeightingScheme {
 		}
 		System.out.println("Ld in Default weighting scheme:" + Ld);
 		return Ld;
-	}
-
-	@Override
-	public double getWqt(Integer N, Integer dft) {
-		double wqt = Math.log(1 + (N / dft));
-		return wqt;
 	}
 
 }

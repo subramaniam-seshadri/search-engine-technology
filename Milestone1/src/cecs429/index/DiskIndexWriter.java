@@ -6,8 +6,10 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.PriorityQueue;
 
 public class DiskIndexWriter {
 
@@ -59,7 +61,7 @@ public class DiskIndexWriter {
 		DataOutputStream outStream = null;
 		Long docLength = 0L;
 		try {
-			outputStream = new FileOutputStream(path + "//docWeights.bin",true);
+			outputStream = new FileOutputStream(path + "//docWeights.bin", true);
 			outStream = new DataOutputStream(new BufferedOutputStream(outputStream));
 			// for each term in map add frequency of that term to docLength to get total
 			// number of tokens in document
@@ -214,7 +216,7 @@ public class DiskIndexWriter {
 		long sumDocLength = avgDocLength.stream().mapToLong(Long::longValue).sum();
 		double avgTfd = ((double) sumDocLength) / ((double) avgDocLength.size());
 		try {
-			outputStream = new FileOutputStream(path + "//docWeights.bin", true);
+			outputStream = new FileOutputStream(path + "//docAvgWeight.bin");
 			outStream = new DataOutputStream(new BufferedOutputStream(outputStream));
 			System.out.println("Average doc Length for corpus: " + avgTfd);
 			outStream.writeDouble(avgTfd);

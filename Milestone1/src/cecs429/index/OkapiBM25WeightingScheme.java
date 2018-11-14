@@ -17,8 +17,15 @@ public class OkapiBM25WeightingScheme implements IWeightingScheme {
 	@Override
 	public double getWdt(Integer tfd, Integer docID) {
 		Double numerator = (2.2 * tfd);
-		getDocLength(docID);
-		Double denominator = (1.2 * (0.25 + (0.75) + tfd));
+		Long docLengthd = 0L;
+		Double docLengthA = 0.0;
+		try {
+			docLengthd = getDocLengthd(docID);
+			docLengthA = getDocLengthA();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		Double denominator = (1.2 * (0.25 + (0.75*(docLengthd.doubleValue()/docLengthA)) + tfd));
 		return (numerator / denominator);
 	}
 
@@ -35,7 +42,7 @@ public class OkapiBM25WeightingScheme implements IWeightingScheme {
 		return Math.max(value1, value2);
 	}
 
-	public Long getDocLength(Integer docID) {
+	public Long getDocLengthd(Integer docID) throws IOException {
 		FileInputStream inputStream = null;
 		DataInputStream inStream = null;
 		Long docLengthd = 0L;
@@ -63,9 +70,32 @@ public class OkapiBM25WeightingScheme implements IWeightingScheme {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
+		} finally {
+			inputStream.close();
+			inStream.close();
 		}
-
 		return docLengthd;
 	}
 
+	public Double getDocLengthA() throws IOException {
+		FileInputStream inputStream = null;
+		DataInputStream inStream = null;
+		Double docLengthA = 0.0;
+		try {
+			// read file
+			inputStream = new FileInputStream(path + "//docAvgWeight.bin");
+			inStream = new DataInputStream(inputStream);
+			while (inStream.available() != 0) {
+				docLengthA = inStream.readDouble();
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			inputStream.close();
+			inStream.close();
+		}
+		return docLengthA;
+	}
 }

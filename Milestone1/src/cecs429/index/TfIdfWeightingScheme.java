@@ -53,7 +53,7 @@ public class TfIdfWeightingScheme implements IWeightingScheme {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		System.out.println("Ld in Default weighting scheme:" + Ld);
+		System.out.println("Ld in tfIdf weighting scheme:" + Ld);
 		return Ld;
 	}
 

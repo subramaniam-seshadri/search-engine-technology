@@ -6,9 +6,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.PriorityQueue;
 
 import cecs429.index.DiskPositionalIndex;
 import cecs429.index.IWeightingScheme;
@@ -35,8 +36,6 @@ public class RankedRetrieval {
 	 * of tokens in document byteSize - Long - 8 bytes - number of bytes in the file
 	 * for the document avgTfd - Double - 8 bytes - avg tfd count for a document
 	 * 
-	 * Last "row" contains docLengthA - Double - 8 bytes - avg number of tokens in
-	 * all the documents in the corpus
 	 * 
 	 * @param path - path where the index and other files are located.
 	 */
@@ -51,9 +50,8 @@ public class RankedRetrieval {
 			while (inStream.available() != 0) {
 
 				try {
-					inStream.skip(32);
-					if(inStream.available()!= 0)
 					numberOfDocs += 1;
+					inStream.skip(32);
 				} catch (EOFException e) {
 
 				}
@@ -67,7 +65,7 @@ public class RankedRetrieval {
 		}
 	}
 
-	public void getRankedDocuments(String query, TokenProcessor processor) {
+	public PriorityQueue<HashMap<Integer, Double>> getRankedDocuments(String query, TokenProcessor processor) {
 		EnglishTokenStream queryStream = new EnglishTokenStream(new StringReader(query));
 		Iterable<String> queryTokens = queryStream.getTokens();
 		HashMap<Integer, Double> accumulatorDocMap = new HashMap<Integer, Double>();
@@ -95,10 +93,19 @@ public class RankedRetrieval {
 			for (Integer key : accumulatorDocMap.keySet()) {
 			    if(accumulatorDocMap.get(key)!= 0.0) {
 			    	Double Ld = weightingScheme.getLd(key);
+			    	Double accumulatorValue = accumulatorDocMap.get(key);
+			    	accumulatorValue /= Ld;
+			    	accumulatorDocMap.put(key, accumulatorValue);
 			    }
 			}
+			
+			PriorityQueue<HashMap<Integer, Double>> pq = new PriorityQueue<HashMap<Integer, Double>>(10, Collections.reverseOrder());
+			pq.add(accumulatorDocMap);
+			return pq;
+			
 		} catch (IOException e) {
 			e.printStackTrace();
+			return null;
 		}
 	}
 }

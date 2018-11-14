@@ -7,7 +7,9 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.concurrent.TimeUnit;
 
 import cecs429.documents.DirectoryCorpus;
@@ -28,6 +30,7 @@ public class PositionalTermDocumentIndexer {
 
 	public static void main(String[] args) throws IOException {
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		DocumentCorpus corpus = null;
 		System.out.println("Select mode:\n1. Build index on disk.\n2. Process queries from index on disk.");
 		boolean indexBool = true;
 		int indexMode = 0;
@@ -39,14 +42,17 @@ public class PositionalTermDocumentIndexer {
 				case 1: {
 					System.out.println("Please enter the path of the directory to index:");
 					String directoryPath = br.readLine();
-					buildIndex(directoryPath);
+					corpus = buildIndex(directoryPath);
 					break;
 				}
 				case 2: // process queries from an on disk index
 				{
 					System.out.println("Please enter the path of the index on disk:");
 					String indexPath = "src/index";
-					processQueries(br, indexPath);
+					System.out.println("Please enter the path of the directory to retrieve results:");
+					String directoryPath = br.readLine();
+					corpus = buildIndex(directoryPath);
+					processQueries(br, indexPath, corpus);
 					break;
 				}
 
@@ -221,7 +227,7 @@ public class PositionalTermDocumentIndexer {
 		return index;
 	}
 
-	public static void buildIndex(String directoryPath) {
+	public static DocumentCorpus buildIndex(String directoryPath) {
 
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
@@ -252,9 +258,10 @@ public class PositionalTermDocumentIndexer {
 		DiskIndexWriter dw = new DiskIndexWriter(writeDirectory, index);
 		dw.writeIndex();
 		System.out.println("Index created on disk on path: " + writeDirectory);
+		return corpus;
 	}
 
-	public static void processQueries(BufferedReader br, String indexPath) {
+	public static void processQueries(BufferedReader br, String indexPath, DocumentCorpus corpus) {
 		TokenProcessor processor = new AdvancedTokenProcessor();
 		System.out.println("Select mode for performing query searches");
 		boolean modeBool = true;
@@ -299,7 +306,12 @@ public class PositionalTermDocumentIndexer {
 						IWeightingScheme weightingScheme = new DefaultWeightingScheme(indexPath);
 						RankedRetrieval rr = new RankedRetrieval(weightingScheme, query, indexPath);
 						rr.getNumberOfDocs();
-						rr.getRankedDocuments(query,processor);
+						PriorityQueue<HashMap<Integer, Double>> pq = rr.getRankedDocuments(query,processor);
+						while(!pq.isEmpty()) {
+							pq.poll();
+						}
+						System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle() + "- " + " Document ID:"
+						+ corpus.getDocument(p.getDocumentId()).getId());
 
 					} catch (IOException e) {
 						e.printStackTrace();

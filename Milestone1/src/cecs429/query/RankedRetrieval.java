@@ -6,9 +6,11 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 
 import cecs429.index.DiskPositionalIndex;
@@ -45,13 +47,14 @@ public class RankedRetrieval {
 		Integer numberOfDocs = 0;
 		try {
 			// read file
-			inputStream = new FileInputStream(path + "//docWeights.bin");
+			inputStream = new FileInputStream(path + "//docAvgWeight.bin");
 			inStream = new DataInputStream(inputStream);
 			while (inStream.available() != 0) {
 
 				try {
-					numberOfDocs += 1;
-					inStream.skip(32);
+					inStream.skip(8);
+					numberOfDocs = inStream.readInt();
+					
 				} catch (EOFException e) {
 
 				}
@@ -65,7 +68,7 @@ public class RankedRetrieval {
 		}
 	}
 
-	public PriorityQueue<HashMap<Integer, Double>> getRankedDocuments(String query, TokenProcessor processor) {
+	public List<RankedResults> getRankedDocuments(String query, TokenProcessor processor) {
 		EnglishTokenStream queryStream = new EnglishTokenStream(new StringReader(query));
 		Iterable<String> queryTokens = queryStream.getTokens();
 		HashMap<Integer, Double> accumulatorDocMap = new HashMap<Integer, Double>();
@@ -73,6 +76,7 @@ public class RankedRetrieval {
 			DiskPositionalIndex di = new DiskPositionalIndex(path);
 			
 			for (String term : queryTokens) {
+				System.out.println("RR for term:" + term);
 				List<Posting> termPostings = di.getPositionalPostings(term);
 				Integer dft = termPostings.size();
 				Double wqt = weightingScheme.getWqt(numberDocs, dft);
@@ -85,7 +89,7 @@ public class RankedRetrieval {
 						accumulatorDocMap.put(p.getDocumentId(), accumulatorValue);
 					}
 					else {
-						accumulatorDocMap.put(p.getDocumentId(), 0.0);
+						accumulatorDocMap.put(p.getDocumentId(), 1.0);
 					}
 				}
 			}
@@ -99,9 +103,29 @@ public class RankedRetrieval {
 			    }
 			}
 			
-			PriorityQueue<HashMap<Integer, Double>> pq = new PriorityQueue<HashMap<Integer, Double>>(10, Collections.reverseOrder());
-			pq.add(accumulatorDocMap);
-			return pq;
+			PriorityQueue<Map.Entry<Integer, Double>> heap = new PriorityQueue<Map.Entry<Integer, Double>>(new Comparator<Map.Entry<Integer, Double>>(){
+				@Override
+				public int compare(Map.Entry<Integer, Double> entry1, Map.Entry<Integer, Double> entry2) {
+					if(entry2.getValue()>entry1.getValue())
+						return 1;
+					else return -1;
+				}
+			});
+			
+			for(Map.Entry<Integer, Double> entry : accumulatorDocMap.entrySet()) {
+				heap.offer(entry);
+			}
+			
+			List<RankedResults> resultList = new ArrayList<RankedResults>();
+			for(int i = 0; i < 3; i++) {
+				Map.Entry<Integer, Double> entry = heap.poll();
+				RankedResults rr = new RankedResults();
+				rr.setDocumentID(entry.getKey());
+				rr.setRetrievalScore(entry.getValue());
+				resultList.add(rr);
+			}
+			
+			return resultList;
 			
 		} catch (IOException e) {
 			e.printStackTrace();

@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -79,10 +80,10 @@ public class DiskIndexWriter {
 			int sumFrequency = frequencyList.stream().mapToInt(Integer::intValue).sum();
 			double avgTfd = ((double) sumFrequency) / ((double) frequencyList.size());
 			double Ld = Math.sqrt(wdtList.stream().mapToDouble(Double::doubleValue).sum());
-			System.out.println("Doc weight:" + Ld);
+			/*System.out.println("Doc weight:" + Ld);
 			System.out.println("Doc Length:" + docLength);
 			System.out.println("Doc Size in bytes:" + fileByteSize);
-			System.out.println("Avg term frequency in doc:" + avgTfd);
+			System.out.println("Avg term frequency in doc:" + avgTfd);*/
 			outStream.writeDouble(Ld);
 			outStream.writeLong(docLength);
 			outStream.writeLong(fileByteSize);
@@ -220,6 +221,7 @@ public class DiskIndexWriter {
 			outStream = new DataOutputStream(new BufferedOutputStream(outputStream));
 			System.out.println("Average doc Length for corpus: " + avgTfd);
 			outStream.writeDouble(avgTfd);
+			outStream.writeInt(avgDocLength.size());
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} finally {
@@ -228,5 +230,41 @@ public class DiskIndexWriter {
 			outputStream.flush();
 			outputStream.close();
 		}
+	}
+	
+	public long createDocW(Long fileByteSize) {
+		Long docLength = 0L;
+		RandomAccessFile raf = null;
+		try {
+			raf = new RandomAccessFile(path + "//docWeights.bin", "rw");
+			List<Integer> frequencyList = new ArrayList<Integer>();
+
+			// for each term in map calculate wd,t for that term.
+			List<Double> wdtList = new ArrayList<Double>();
+			for (String key : termFrequencyMap.keySet()) {
+				frequencyList.add(termFrequencyMap.get(key));
+				docLength += termFrequencyMap.get(key);
+				double wdt = (1 + Math.log(termFrequencyMap.get(key)));
+				wdtList.add(wdt * wdt);
+			}
+			int sumFrequency = frequencyList.stream().mapToInt(Integer::intValue).sum();
+			double avgTfd = ((double) sumFrequency) / ((double) frequencyList.size());
+			double Ld = Math.sqrt(wdtList.stream().mapToDouble(Double::doubleValue).sum());
+			System.out.println("Doc weight:" + Ld);
+			System.out.println("Doc Length:" + docLength);
+			System.out.println("Doc Size in bytes:" + fileByteSize);
+			System.out.println("Avg term frequency in doc:" + avgTfd);
+			raf.seek(raf.length());
+			raf.writeDouble(Ld);
+			raf.writeLong(docLength);
+			raf.writeLong(fileByteSize);
+			raf.writeDouble(avgTfd);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return 0;
+		
 	}
 }

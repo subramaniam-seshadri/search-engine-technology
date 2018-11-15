@@ -1,9 +1,5 @@
 package cecs429.index;
 
-import java.io.DataInputStream;
-import java.io.EOFException;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 public class DefaultWeightingScheme implements IWeightingScheme {
@@ -22,7 +18,17 @@ public class DefaultWeightingScheme implements IWeightingScheme {
 
 	@Override
 	public double getLd(Integer docID) {
-		FileInputStream inputStream = null;
+		DiskPositionalIndex dp = null;
+		try {
+			dp = new DiskPositionalIndex(path);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		Double Ld = dp.readLdFromDisk(docID);
+		return Ld;
+			
+		/*FileInputStream inputStream = null;
 		DataInputStream inStream = null;
 		Double Ld = 0.0;
 		try {
@@ -50,7 +56,7 @@ public class DefaultWeightingScheme implements IWeightingScheme {
 			e.printStackTrace();
 		}
 		System.out.println("Ld in Default weighting scheme:" + Ld);
-		return Ld;
+		return Ld;*/
 	}
 
 	@Override

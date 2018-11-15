@@ -49,8 +49,8 @@ public class DiskPositionalIndex implements Index {
 	@Override
 	public List<Posting> getPositionalPostings(String term) {
 		List<Posting> result = null;
-		System.out.println("Vocab Position List Size:" + vocabPositionList.size());
-		System.out.println("Posting Position List Size:" + postingPositionList.size());
+		//System.out.println("Vocab Position List Size:" + vocabPositionList.size());
+		//System.out.println("Posting Position List Size:" + postingPositionList.size());
 		// list lengths should be same. For each term position in vocabPositionTable,
 		// there is a corresponding value in postingPositionTable list
 		RandomAccessFile raf = null;
@@ -87,7 +87,7 @@ public class DiskPositionalIndex implements Index {
 			for (int i = 0; i < noOfBytesToRead; i++) {
 				data += (char) raf.readByte();
 			}
-			System.out.println(data);
+			//System.out.println(data);
 			if (term.equals(data)) {
 				return 0;
 			} else {
@@ -198,5 +198,24 @@ public class DiskPositionalIndex implements Index {
 			e.printStackTrace();
 		}
 		return data;
+	}
+	
+	
+	public Double readLdFromDisk(Integer docID) {
+		
+		RandomAccessFile raf = null;
+		Double Ld = 0.0;
+		try {
+			raf = new RandomAccessFile(path +"//docWeights.bin", "r");
+			raf.seek(docID * 32);
+			Ld = raf.readDouble();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.out.println("error read Ld");
+			e.printStackTrace();
+		}
+		
+		return Ld;
 	}
 }

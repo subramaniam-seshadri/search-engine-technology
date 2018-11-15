@@ -7,9 +7,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.PriorityQueue;
 import java.util.concurrent.TimeUnit;
 
 import cecs429.documents.DirectoryCorpus;
@@ -21,6 +19,7 @@ import cecs429.index.DiskPositionalIndex;
 import cecs429.index.IWeightingScheme;
 import cecs429.index.Index;
 import cecs429.index.PositionalInvertedIndex;
+import cecs429.query.RankedResults;
 import cecs429.query.RankedRetrieval;
 import cecs429.text.AdvancedTokenProcessor;
 import cecs429.text.EnglishTokenStream;
@@ -31,6 +30,8 @@ public class PositionalTermDocumentIndexer {
 	public static void main(String[] args) throws IOException {
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 		DocumentCorpus corpus = null;
+		
+		// Menu to build index or read index
 		System.out.println("Select mode:\n1. Build index on disk.\n2. Process queries from index on disk.");
 		boolean indexBool = true;
 		int indexMode = 0;
@@ -41,8 +42,10 @@ public class PositionalTermDocumentIndexer {
 				switch (indexMode) {
 				case 1: {
 					System.out.println("Please enter the path of the directory to index:");
-					String directoryPath = br.readLine();
+					String directoryPath = "";
+					//String directoryPath = "D:\\CECS_529\\Homework3\\Output";
 					corpus = buildIndex(directoryPath);
+					System.out.println("Found" + corpus.getCorpusSize());
 					break;
 				}
 				case 2: // process queries from an on disk index
@@ -50,7 +53,8 @@ public class PositionalTermDocumentIndexer {
 					System.out.println("Please enter the path of the index on disk:");
 					String indexPath = "src/index";
 					System.out.println("Please enter the path of the directory to retrieve results:");
-					String directoryPath = br.readLine();
+					String directoryPath = "";
+					//String directoryPath = "D:\\CECS_529\\Homework3\\Output";
 					corpus = buildIndex(directoryPath);
 					processQueries(br, indexPath, corpus);
 					break;
@@ -209,11 +213,8 @@ public class PositionalTermDocumentIndexer {
 				}
 			}
 			DiskIndexWriter dw = new DiskIndexWriter("src/index", termFrequencyMap);
-			try {
-				avgDocLength.add(dw.createDocWeightsFile(doc.getDocSize())); // write it out to a file
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			//avgDocLength.add(dw.createDocWeightsFile(doc.getDocSize())); // write it out to a file
+			avgDocLength.add(dw.createDocW(doc.getDocSize()));
 		}
 
 		// write docLengthA - avg number of tokens in all documents in the corpus
@@ -306,12 +307,12 @@ public class PositionalTermDocumentIndexer {
 						IWeightingScheme weightingScheme = new DefaultWeightingScheme(indexPath);
 						RankedRetrieval rr = new RankedRetrieval(weightingScheme, query, indexPath);
 						rr.getNumberOfDocs();
-						PriorityQueue<HashMap<Integer, Double>> pq = rr.getRankedDocuments(query,processor);
-						while(!pq.isEmpty()) {
-							pq.poll();
+						List<RankedResults> resultList = rr.getRankedDocuments(query, processor);
+						for(RankedResults r: resultList) {
+							System.out.println("Document " + corpus.getDocument(r.getDocumentID()).getTitle() + "- " + " Document ID:"
+									+ corpus.getDocument(r.getDocumentID()).getId() + ":" + r.getRetrievalScore());
 						}
-						System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle() + "- " + " Document ID:"
-						+ corpus.getDocument(p.getDocumentId()).getId());
+						
 
 					} catch (IOException e) {
 						e.printStackTrace();
@@ -364,8 +365,7 @@ public class PositionalTermDocumentIndexer {
 		// Load files from directory and read
 		// DocumentCorpus corpus =
 		// DirectoryCorpus.loadJSONFileDirectory(Paths.get(corpusDirectory), ".json");
-		System.out.println(
-				"\nFound " + corpus.getCorpusSize() + " documents in the directory. Indexing the documents...\n");
+		System.out.println("\nFound " + corpus.getCorpusSize() + " documents in the directory. Indexing the documents...\n");
 		// Index the corpus by calling indexCorpus() method
 		return corpus;
 	}

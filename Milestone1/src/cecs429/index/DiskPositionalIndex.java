@@ -46,11 +46,16 @@ public class DiskPositionalIndex implements Index {
 		}
 	}
 
+	public DiskPositionalIndex() {
+
+	}
+
 	@Override
 	public List<Posting> getPositionalPostings(String term) {
 		List<Posting> result = null;
-		//System.out.println("Vocab Position List Size:" + vocabPositionList.size());
-		//System.out.println("Posting Position List Size:" + postingPositionList.size());
+		// System.out.println("Vocab Position List Size:" + vocabPositionList.size());
+		// System.out.println("Posting Position List Size:" +
+		// postingPositionList.size());
 		// list lengths should be same. For each term position in vocabPositionTable,
 		// there is a corresponding value in postingPositionTable list
 		RandomAccessFile raf = null;
@@ -87,7 +92,7 @@ public class DiskPositionalIndex implements Index {
 			for (int i = 0; i < noOfBytesToRead; i++) {
 				data += (char) raf.readByte();
 			}
-			//System.out.println(data);
+			// System.out.println(data);
 			if (term.equals(data)) {
 				return 0;
 			} else {
@@ -199,14 +204,13 @@ public class DiskPositionalIndex implements Index {
 		}
 		return data;
 	}
-	
-	
-	public Double readLdFromDisk(Integer docID) {
-		
+
+	public Double readLdFromDisk(Integer docID, String indexPath) {
+
 		RandomAccessFile raf = null;
 		Double Ld = 0.0;
 		try {
-			raf = new RandomAccessFile(path +"//docWeights.bin", "r");
+			raf = new RandomAccessFile(indexPath + "//docWeights.bin", "r");
 			raf.seek(docID * 32);
 			Ld = raf.readDouble();
 		} catch (FileNotFoundException e) {
@@ -215,7 +219,93 @@ public class DiskPositionalIndex implements Index {
 			System.out.println("error read Ld");
 			e.printStackTrace();
 		}
-		
 		return Ld;
+	}
+
+	public Long readDocLengthDFromDisk(Integer docID, String indexPath) {
+		RandomAccessFile raf = null;
+		Long docLengthd = 0L;
+		try {
+			raf = new RandomAccessFile(indexPath + "//docWeights.bin", "r");
+			raf.seek((docID * 32) + 8);
+			docLengthd = raf.readLong();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.out.println("error read DocLengthD");
+			e.printStackTrace();
+		}
+		return docLengthd;
+	}
+
+	public Double readDocLengthAFromDisk(String indexPath) {
+		RandomAccessFile raf = null;
+		Double docLengthA = 0.0;
+		try {
+			raf = new RandomAccessFile(indexPath + "//docWeights.bin", "r");
+			raf.seek(raf.length() - 12);
+			docLengthA = raf.readDouble();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.out.println("error read DocLengthA");
+			e.printStackTrace();
+		}
+		return docLengthA;
+
+	}
+
+	@Override
+	public List<Posting> getPostings(String term) {
+
+		return null;
+	}
+
+	public Integer getNumberOfDocs(String indexPath) {
+		RandomAccessFile raf = null;
+		Integer numberOfDocs = 0;
+		try {
+			raf = new RandomAccessFile(indexPath + "//docWeights.bin", "r");
+			raf.seek(raf.length() - 4);
+			numberOfDocs = raf.readInt();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.out.println("error read DocLengthD");
+			e.printStackTrace();
+		}
+		return numberOfDocs;
+	}
+
+	public double getByteSizeForDocs(Integer docID, String indexPath) {
+		RandomAccessFile raf = null;
+		Double byteSize = 0.0;
+		try {
+			raf = new RandomAccessFile(indexPath + "//docWeights.bin", "r");
+			raf.seek((docID * 32) + 16);
+			byteSize = raf.readDouble();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.out.println("error read byteSizeD");
+			e.printStackTrace();
+		}
+		return byteSize;
+	}
+	
+	public double getAvgTfdFromDisk(Integer docID, String indexPath) {
+		RandomAccessFile raf = null;
+		Double avgTfd = 0.0;
+		try {
+			raf = new RandomAccessFile(indexPath + "//docWeights.bin", "r");
+			raf.seek((docID * 32) + 24);
+			avgTfd = raf.readDouble();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.out.println("error read avgTfd");
+			e.printStackTrace();
+		}
+		return avgTfd;
 	}
 }

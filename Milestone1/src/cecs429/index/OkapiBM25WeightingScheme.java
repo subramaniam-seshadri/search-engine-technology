@@ -1,7 +1,6 @@
 package cecs429.index;
 
 import java.io.DataInputStream;
-import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -9,23 +8,22 @@ import java.io.IOException;
 public class OkapiBM25WeightingScheme implements IWeightingScheme {
 
 	private String path;
+	private DiskPositionalIndex dp;
 
-	public OkapiBM25WeightingScheme(String path) {
+	public OkapiBM25WeightingScheme(String path, DiskPositionalIndex dp) {
 		this.path = path;
+		this.dp = dp;
 	}
 
 	@Override
 	public double getWdt(Integer tfd, Integer docID) {
 		Double numerator = (2.2 * tfd);
-		Long docLengthd = 0L;
+		Long docLengthD = 0L;
 		Double docLengthA = 0.0;
-		try {
-			docLengthd = getDocLengthd(docID);
+			docLengthD = getDocLengthD(docID);
 			docLengthA = getDocLengthA();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		Double denominator = (1.2 * (0.25 + (0.75*(docLengthd.doubleValue()/docLengthA)) + tfd));
+		
+		Double denominator = (1.2 * (0.25 + (0.75 * (docLengthD.doubleValue() / docLengthA))))+ tfd;
 		return (numerator / denominator);
 	}
 
@@ -42,60 +40,15 @@ public class OkapiBM25WeightingScheme implements IWeightingScheme {
 		return Math.max(value1, value2);
 	}
 
-	public Long getDocLengthd(Integer docID) throws IOException {
-		FileInputStream inputStream = null;
-		DataInputStream inStream = null;
-		Long docLengthd = 0L;
-		try {
-			// read file
-			inputStream = new FileInputStream(path + "//docWeights.bin");
-			inStream = new DataInputStream(inputStream);
-			Integer indexIntoFile = 0;
-			while (inStream.available() != 0) {
-				if (indexIntoFile == docID) {
-					try {
-						inStream.skip(32 * indexIntoFile);
-						if (inStream.available() != 0) {
-							inStream.skip(8);
-							docLengthd = inStream.readLong();
-						}
-					} catch (EOFException e) {
-						e.printStackTrace();
-					}
-				} else {
-					indexIntoFile += 1;
-				}
-			}
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			inputStream.close();
-			inStream.close();
-		}
+	public Long getDocLengthD(Integer docID) {
+		Long docLengthd = dp.readDocLengthDFromDisk(docID, path);
 		return docLengthd;
 	}
 
-	public Double getDocLengthA() throws IOException {
-		FileInputStream inputStream = null;
-		DataInputStream inStream = null;
-		Double docLengthA = 0.0;
-		try {
-			// read file
-			inputStream = new FileInputStream(path + "//docAvgWeight.bin");
-			inStream = new DataInputStream(inputStream);
-			while (inStream.available() != 0) {
-				docLengthA = inStream.readDouble();
-			}
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			inputStream.close();
-			inStream.close();
-		}
+	public Double getDocLengthA() {
+	
+		Double docLengthA = dp.readDocLengthAFromDisk(path);
+		
 		return docLengthA;
 	}
 }

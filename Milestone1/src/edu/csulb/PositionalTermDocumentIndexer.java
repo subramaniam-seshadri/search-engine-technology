@@ -3,7 +3,6 @@ package edu.csulb;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,6 +18,9 @@ import cecs429.index.DiskPositionalIndex;
 import cecs429.index.IWeightingScheme;
 import cecs429.index.Index;
 import cecs429.index.PositionalInvertedIndex;
+import cecs429.index.Posting;
+import cecs429.query.BooleanQueryParser;
+import cecs429.query.QueryComponent;
 import cecs429.query.RankedResults;
 import cecs429.query.RankedRetrieval;
 import cecs429.text.AdvancedTokenProcessor;
@@ -30,21 +32,29 @@ public class PositionalTermDocumentIndexer {
 	public static void main(String[] args) throws IOException {
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 		DocumentCorpus corpus = null;
-		
+		String corpusDirectory = null;
+
+		System.out.println("Please enter the path of the corpus:");
+		try {
+			corpusDirectory = Paths.get(br.readLine()).toString();
+			corpusDirectory = "D:\\CECS_529\\Homework3\\test";
+			corpus = buildCorpus(corpusDirectory);
+		} catch (Exception e) {
+			System.out.println("Please enter a valid directory path");
+		}
+
 		// Menu to build index or read index
-		System.out.println("Select mode:\n1. Build index on disk.\n2. Process queries from index on disk.");
+		System.out.println("Select mode:\n1. Build index on disk.\n2. Process queries from index on disk.\n3. Exit");
 		boolean indexBool = true;
 		int indexMode = 0;
 		while (indexBool) {
 			try {
 				indexMode = Integer.parseInt(br.readLine());
-				indexBool = false;
+
 				switch (indexMode) {
 				case 1: {
-					System.out.println("Please enter the path of the directory to index:");
-					String directoryPath = "";
-					//String directoryPath = "D:\\CECS_529\\Homework3\\Output";
-					corpus = buildIndex(directoryPath);
+					System.out.println("Building index for corpus in : " + corpusDirectory + " path");
+					buildIndex(corpusDirectory, corpus, br);
 					System.out.println("Found" + corpus.getCorpusSize());
 					break;
 				}
@@ -52,12 +62,14 @@ public class PositionalTermDocumentIndexer {
 				{
 					System.out.println("Please enter the path of the index on disk:");
 					String indexPath = "src/index";
-					System.out.println("Please enter the path of the directory to retrieve results:");
-					String directoryPath = "";
-					//String directoryPath = "D:\\CECS_529\\Homework3\\Output";
-					corpus = buildIndex(directoryPath);
+					// String indexPath = Paths.get(br.readLine()).toString();
 					processQueries(br, indexPath, corpus);
 					break;
+				}
+				case 3: {
+					System.out.println("Exiting system...");
+					indexBool = false;
+					System.exit(0);
 				}
 
 				default:
@@ -118,37 +130,26 @@ public class PositionalTermDocumentIndexer {
 
 	}
 
-	private static void executeSpecialQuery(String query, Index index) {
-		if (query.equals(":q")) {
-			System.out.println("Exiting System...");
-			System.exit(0);
-		} else if (query.contains(":stem")) {
-			String stemmedToken = "";
-			try {
-				stemmedToken = AdvancedTokenProcessor.stemTokenJava(query.split("\\s+")[1]);
-				System.out.println("Stemmed token is :" + stemmedToken);
-			} catch (Throwable e) {
-				e.printStackTrace();
-			}
-		} else if (query.contains(":index")) {
-			System.out.println("Indexing...");
-			String directoryPath = Paths.get(query.split("\\s+")[1]).toString();
-			DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(Paths.get(directoryPath).toAbsolutePath(),
-					".txt");
-			// index = indexCorpus(corpus);
-		} else if (query.contains(":vocab")) {
-			List<String> vocabulary = index.getVocabulary();
-			System.out.println("First 1000 terms in vocabulary are as follows:");
-			int vocabSize = vocabulary.size();
-			if (vocabSize > 1000)
-				vocabSize = 1000;
-			for (int i = 0; i < vocabSize; i++) {
-				System.out.println(vocabulary.get(i));
-			}
-		}
-	}
+	/*
+	 * private static void executeSpecialQuery(String query, Index index) { if
+	 * (query.equals(":q")) { System.out.println("Exiting System...");
+	 * System.exit(0); } else if (query.contains(":stem")) { String stemmedToken =
+	 * ""; try { stemmedToken =
+	 * AdvancedTokenProcessor.stemTokenJava(query.split("\\s+")[1]);
+	 * System.out.println("Stemmed token is :" + stemmedToken); } catch (Throwable
+	 * e) { e.printStackTrace(); } } else if (query.contains(":index")) {
+	 * System.out.println("Indexing..."); String directoryPath =
+	 * Paths.get(query.split("\\s+")[1]).toString(); DocumentCorpus corpus =
+	 * DirectoryCorpus.loadTextDirectory(Paths.get(directoryPath).toAbsolutePath(),
+	 * ".txt"); // index = indexCorpus(corpus); } else if (query.contains(":vocab"))
+	 * { List<String> vocabulary = index.getVocabulary();
+	 * System.out.println("First 1000 terms in vocabulary are as follows:"); int
+	 * vocabSize = vocabulary.size(); if (vocabSize > 1000) vocabSize = 1000; for
+	 * (int i = 0; i < vocabSize; i++) { System.out.println(vocabulary.get(i)); } }
+	 * }
+	 */
 
-	private static void executeSpecialQuery1(String query) {
+	private static void executeSpecialQuery(String query, DocumentCorpus corpus, BufferedReader br) {
 		if (query.equals(":q")) {
 			System.out.println("Exiting System...");
 			System.exit(0);
@@ -163,7 +164,7 @@ public class PositionalTermDocumentIndexer {
 		} else if (query.contains(":index")) {
 			System.out.println("Indexing...");
 			String directoryPath = Paths.get(query.split("\\s+")[1]).toString();
-			buildIndex(directoryPath);
+			buildIndex(directoryPath, corpus, br);
 		} else if (query.contains(":vocab")) {
 			DiskPositionalIndex di = null;
 			try {
@@ -187,6 +188,7 @@ public class PositionalTermDocumentIndexer {
 		Iterable<Document> documentList = corpus.getDocuments();
 		PositionalInvertedIndex index = new PositionalInvertedIndex();
 		List<Long> avgDocLength = new ArrayList<Long>();
+		DiskIndexWriter dw = null;
 
 		for (Document doc : documentList) {
 			HashMap<String, Integer> termFrequencyMap = new HashMap<String, Integer>(); // create termFrequencyMap which
@@ -212,35 +214,18 @@ public class PositionalTermDocumentIndexer {
 					index.addTerm(processedToken, doc.getId(), i);
 				}
 			}
-			DiskIndexWriter dw = new DiskIndexWriter("src/index", termFrequencyMap);
-			//avgDocLength.add(dw.createDocWeightsFile(doc.getDocSize())); // write it out to a file
-			avgDocLength.add(dw.createDocW(doc.getDocSize()));
+			dw = new DiskIndexWriter("src/index", termFrequencyMap);
+			// avgDocLength.add(dw.createDocWeightsFile(doc.getDocSize())); // write it out
+			// to a file
+			avgDocLength.add(dw.createDocWeightsFile(doc.getDocSize()));
 		}
-
 		// write docLengthA - avg number of tokens in all documents in the corpus
-		DiskIndexWriter dw = new DiskIndexWriter("src/index");
-		try {
-			dw.writeAvgDocLength(avgDocLength);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
+		dw.writeAvgDocLength(avgDocLength);
 		return index;
 	}
 
-	public static DocumentCorpus buildIndex(String directoryPath) {
-
-		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-
-		try {
-			// directoryPath = Paths.get(input.nextLine()).toAbsolutePath().toString();
-			// directoryPath = "G:\\My Research\\CECS 529\\Homework3\\Output";
-		} catch (InvalidPathException e) {
-			System.out.println("Invalid path! Please enter a valid directory path");
-		}
-
+	public static void buildIndex(String directoryPath, DocumentCorpus corpus, BufferedReader br) {
 		long start = System.nanoTime();
-		DocumentCorpus corpus = buildCorpus(directoryPath);
 		System.out.println(
 				"\nFound " + corpus.getCorpusSize() + " documents in the directory. Indexing the documents...\n");
 		// Index the corpus by calling indexCorpus() method
@@ -253,13 +238,15 @@ public class PositionalTermDocumentIndexer {
 		// Print out the time taken to load and index the documents
 		System.out.println("Time taken to load documents and index corpus in seconds:" + executionTime);
 
+		System.out.println("Enter the path where you want to store the index on disk:");
+		// String writeDirectory = Paths.get(br.readLine()).toString();
+
 		String writeDirectory = "src/index";
 
 		// write index to disk
 		DiskIndexWriter dw = new DiskIndexWriter(writeDirectory, index);
 		dw.writeIndex();
 		System.out.println("Index created on disk on path: " + writeDirectory);
-		return corpus;
 	}
 
 	public static void processQueries(BufferedReader br, String indexPath, DocumentCorpus corpus) {
@@ -288,8 +275,37 @@ public class PositionalTermDocumentIndexer {
 							query = br.readLine();
 							if (query.contains(":q") || query.contains(":stem") || query.contains(":index")
 									|| query.contains(":vocab")) {
-								executeSpecialQuery1(query);
+								executeSpecialQuery(query, corpus, br);
 							} else if (query != null && !query.isEmpty()) {
+								BooleanQueryParser queryParser = new BooleanQueryParser();
+								QueryComponent userQuery = queryParser.parseQuery(query);
+								int count = 0;
+								DiskPositionalIndex dp = new DiskPositionalIndex(indexPath);
+								for (Posting p : userQuery.getPostings(dp)) {
+									count += 1;
+									System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle()
+											+ "- " + " Document ID:" + corpus.getDocument(p.getDocumentId()).getId());
+								}
+								System.out.println("Found " + count + " documents containing the terms:" + query);
+								if (count > 0) {
+									System.out.println("Would you like to view a document from the results?(Y/N):");
+									char c = br.readLine().charAt(0);
+									if (c == 'Y' || c == 'y') {
+										try {
+											System.out.println("Please enter the document ID you'd like to view :");
+											int documentID = Integer.parseInt(br.readLine());
+											EnglishTokenStream docStream = new EnglishTokenStream(
+													corpus.getDocument(documentID).getContent());
+											Iterable<String> docTokens = docStream.getTokens();
+											for (String tokens : docTokens)
+												System.out.print(tokens + " ");
+
+										} catch (Exception e) {
+
+										}
+									} else
+										continue;
+								}
 
 							}
 						} catch (IOException e) {
@@ -304,15 +320,16 @@ public class PositionalTermDocumentIndexer {
 					String query = "";
 					try {
 						query = br.readLine();
-						IWeightingScheme weightingScheme = new DefaultWeightingScheme(indexPath);
-						RankedRetrieval rr = new RankedRetrieval(weightingScheme, query, indexPath);
-						rr.getNumberOfDocs();
-						List<RankedResults> resultList = rr.getRankedDocuments(query, processor);
-						for(RankedResults r: resultList) {
-							System.out.println("Document " + corpus.getDocument(r.getDocumentID()).getTitle() + "- " + " Document ID:"
-									+ corpus.getDocument(r.getDocumentID()).getId() + ":" + r.getRetrievalScore());
+						DiskPositionalIndex dp = new DiskPositionalIndex();
+						IWeightingScheme weightingScheme = new DefaultWeightingScheme(indexPath, dp);
+						Integer numberOfDocs = dp.getNumberOfDocs(indexPath);
+						RankedRetrieval rr = new RankedRetrieval(weightingScheme, query, indexPath, numberOfDocs);
+						List<RankedResults> resultList = rr.getRankedDocuments(processor);
+						for (RankedResults r : resultList) {
+							System.out.println("Document " + corpus.getDocument(r.getDocumentID()).getTitle() + "- "
+									+ " Document ID: " + corpus.getDocument(r.getDocumentID()).getId() + " Score :  "
+									+ r.getRetrievalScore());
 						}
-						
 
 					} catch (IOException e) {
 						e.printStackTrace();
@@ -359,14 +376,21 @@ public class PositionalTermDocumentIndexer {
 		 */
 	}
 
+	/**
+	 * This method is used to build a corpus, given a corpus directory path as
+	 * string
+	 * 
+	 * @param corpusDirectory - String path of the directory where corpus is present
+	 *                        on disk.
+	 * @return - corpus formed over all the documents in the given directory
+	 */
 	public static DocumentCorpus buildCorpus(String corpusDirectory) {
-		DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(Paths.get("").toAbsolutePath(), ".txt");
+		// DocumentCorpus corpus =
+		// DirectoryCorpus.loadTextDirectory(Paths.get("").toAbsolutePath(), ".txt");
 
 		// Load files from directory and read
-		// DocumentCorpus corpus =
-		// DirectoryCorpus.loadJSONFileDirectory(Paths.get(corpusDirectory), ".json");
-		System.out.println("\nFound " + corpus.getCorpusSize() + " documents in the directory. Indexing the documents...\n");
-		// Index the corpus by calling indexCorpus() method
+		DocumentCorpus corpus = DirectoryCorpus.loadJSONFileDirectory(Paths.get(corpusDirectory), ".json");
+		System.out.println("\nFound " + corpus.getCorpusSize() + " documents in the directory");
 		return corpus;
 	}
 }

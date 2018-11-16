@@ -60,4 +60,9 @@ public class PositionalInvertedIndex implements Index {
 			vocabulary.put(term, postingList);
 		}
 	}
+
+	@Override
+	public List<Posting> getPostings(String term) {
+		return null;
+	}
 }

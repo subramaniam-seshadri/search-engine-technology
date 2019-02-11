@@ -1,15 +1,22 @@
 package cecs429.index;
 
-import java.io.DataInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-
 public class OkapiBM25WeightingScheme implements IWeightingScheme {
 
 	private String path;
 	private DiskPositionalIndex dp;
+	private DiskIndexWriter dw;
+	private ClusterIndexDiskWriter cw;
 
+	public OkapiBM25WeightingScheme(String path,DiskIndexWriter dw) {
+		this.path = path;
+		this.dw = dw;
+	}
+	
+	public OkapiBM25WeightingScheme(String path,ClusterIndexDiskWriter cw) {
+		this.path = path;
+		this.cw = cw;
+	}
+	
 	public OkapiBM25WeightingScheme(String path, DiskPositionalIndex dp) {
 		this.path = path;
 		this.dp = dp;
@@ -23,7 +30,7 @@ public class OkapiBM25WeightingScheme implements IWeightingScheme {
 			docLengthD = getDocLengthD(docID);
 			docLengthA = getDocLengthA();
 		
-		Double denominator = (1.2 * (0.25 + (0.75 * (docLengthD.doubleValue() / docLengthA))))+ tfd;
+		Double denominator = (1.2 * (0.25 + (0.75 * (docLengthD.doubleValue() / docLengthA.doubleValue()))))+ tfd.doubleValue();
 		return (numerator / denominator);
 	}
 
@@ -35,20 +42,26 @@ public class OkapiBM25WeightingScheme implements IWeightingScheme {
 
 	@Override
 	public double getWqt(Integer N, Integer dft) {
-		Double value1 = Math.log(((N - dft) + 0.5) / (dft + 0.5));
+		Double value1 = Math.log(((N.doubleValue() - dft.doubleValue()) + 0.5) / (dft + 0.5));
 		Double value2 = 0.1;
 		return Math.max(value1, value2);
 	}
 
 	public Long getDocLengthD(Integer docID) {
-		Long docLengthd = dp.readDocLengthDFromDisk(docID, path);
+		Long docLengthd = 0L;
+		if(dw == null)
+			docLengthd = cw.getDocLengthD(docID);
+		else
+			docLengthd = dw.getDocLengthD(docID);
 		return docLengthd;
 	}
-
-	public Double getDocLengthA() {
 	
-		Double docLengthA = dp.readDocLengthAFromDisk(path);
-		
+	public Double getDocLengthA() {
+		Double docLengthA = 0.0;
+		if(dw == null)
+			docLengthA = cw.getDocLengthA();
+		else
+			docLengthA = dw.getDocLengthA();
 		return docLengthA;
 	}
 }

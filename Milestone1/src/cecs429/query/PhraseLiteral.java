@@ -98,7 +98,9 @@ public class PhraseLiteral implements QueryComponent {
 				List<Integer> pp2 = term2.get(j).getPositionsInDoc();
 				List<Integer> phrasePosition = new ArrayList<Integer>();
 				Posting p = null;
-				for (Integer positions1 : pp1) {
+				
+				
+				/*for (Integer positions1 : pp1) {
 					for (Integer positions2 : pp2) {
 						int relative_position = positions1 - positions2;
 						if ((relative_position <= k) && (relative_position >= 0)) {
@@ -107,7 +109,29 @@ public class PhraseLiteral implements QueryComponent {
 							continue;
 						}
 					}
+				}*/
+				int n =0, q = 0;
+				for(; n < pp1.size() && q <pp2.size();) {
+					int _position1 = pp1.get(n);
+					int _position2 = pp2.get(q);
+					if(_position1 > _position2) {
+						int _relative = _position1 - _position2;
+						if((_relative)<=k && (_relative >=0)){
+							phrasePosition.add(_position2);
+							n++; 
+							q++;
+							continue;
+						}else {
+							q++;
+							continue;
+						}
+					}else {
+						n++;
+						continue;
+					}
 				}
+				
+				
 				if (phrasePosition.isEmpty()) {
 					i += 1;
 					j += 1;

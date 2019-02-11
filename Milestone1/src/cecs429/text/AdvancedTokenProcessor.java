@@ -16,11 +16,21 @@ import org.tartarus.snowball.SnowballStemmer;
 
 public class AdvancedTokenProcessor implements TokenProcessor {
 	HashSet<Character> accentedCharacters = new HashSet<Character>();
+	private Class stemClass;
+	private static SnowballStemmer stemmer;
+
+	public AdvancedTokenProcessor() throws Throwable {
+		super();
+		this.stemClass = Class.forName("org.tartarus.snowball.ext.englishStemmer");
+		this.stemmer = (SnowballStemmer) stemClass.newInstance();
+	}
+
 	@Override
 	public List<String> processToken(String token) {
 		List<String> processedTokens = new ArrayList<String>();
 		String stemmedToken = "";
 		// Rule 1 & 4
+		token = token.trim();
 		token = token.replaceAll("^[^a-zA-Z0-9\\s]+|[^a-zA-Z0-9\\s]+$", "").toLowerCase();
 
 		// Rule 2
@@ -28,48 +38,30 @@ public class AdvancedTokenProcessor implements TokenProcessor {
 			token = token.replace("\"", "");
 		if (token.contains("'"))
 			token = token.replace("\'", "");
+		// Rule 3
 		try {
-			stemmedToken = stemTokenJava(token);
-		} catch (Throwable e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
-		// To handle accented tokens
-		/*String unaccentedToken = "";
-		try {
-			unaccentedToken = StringUtils.stripAccents(token);
-		} catch (Exception e) {
-		}
-		if (!unaccentedToken.equals(token)) { // unaccented token not equal to token, means it contains accent
-			processedTokens.add(token);
-			processedTokens.add(unaccentedToken);
-		} else { // no accent process as normal English token
-
-			try {
-				token = stemTokenJava(token);
-			} catch (Throwable e) {
-				e.printStackTrace();
-			}*/
-		
-			// Rule 3
-			if (token.contains("-") && !token.startsWith("-")) {
+			if (token.contains("-") && !token.startsWith("-")) { // token is a hyphenated word
 				String[] parts = token.split("-");
 				String combinedToken = "";
 				for (String s : parts) {
-					processedTokens.add(s);
-					combinedToken += s;
+					if (s != null && !s.isEmpty()) {
+						String sToken = stemTokenJava(
+								s.trim().replaceAll("^[^a-zA-Z0-9\\s]+|[^a-zA-Z0-9\\s]+$", "").toLowerCase());
+						processedTokens.add(sToken);
+						combinedToken += sToken;
+					}
 				}
 				processedTokens.add(combinedToken);
-			} else {
+			} else { // token is not a hyphenated word.
+				stemmedToken = stemTokenJava(token);
 				processedTokens.add(stemmedToken);
 			}
+		} catch (Throwable e1) {
+		}
 		return processedTokens;
 	}
 
 	public static String stemTokenJava(String token) throws Throwable {
-		Class stemClass = Class.forName("org.tartarus.snowball.ext.englishStemmer");
-		SnowballStemmer stemmer = (SnowballStemmer) stemClass.newInstance();
 		stemmer.setCurrent(token);
 		stemmer.stem();
 		String stemmedToken = stemmer.getCurrent();

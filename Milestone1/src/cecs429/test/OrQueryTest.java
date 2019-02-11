@@ -67,7 +67,11 @@ class OrQueryTest {
 	}	
 
 	private static Index indexCorpus(DocumentCorpus corpus) {
-		TokenProcessor processor = new AdvancedTokenProcessor();
+		AdvancedTokenProcessor tokenProcesser = null;
+		try {
+			tokenProcesser = new AdvancedTokenProcessor();
+		} catch (Throwable e) {
+		}
 		Iterable<Document> documentList = corpus.getDocuments();
 		PositionalInvertedIndex index = new PositionalInvertedIndex();
 		for (Document doc : documentList) {
@@ -79,7 +83,7 @@ class OrQueryTest {
 			int i = 0;
 			for (String tokens : docTokens) {
 				i += 1;
-				List<String> processedTokens = processor.processToken(tokens);
+				List<String> processedTokens = tokenProcesser.processToken(tokens);
 				for (String processedToken : processedTokens) {
 					index.addTerm(processedToken, doc.getId(), i);
 				}

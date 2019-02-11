@@ -46,13 +46,9 @@ public class JSONFileDocument implements FileDocument{
 
 	@Override
 	public String getTitle() {
-		return mJsonDoc.getTitle();
+		return mFilePath.getFileName().toString();
 	}
 
-	@Override
-	public Path getFilePath() {
-		return mFilePath;
-	}
 	
 	/**
 	 * Maps the content in json file to a JsonDoc object using gson 
@@ -85,4 +81,14 @@ public class JSONFileDocument implements FileDocument{
 	public Long getDocSize() {
 		return new File(mFilePath.toString()).length();
 	}
+	
+	public String getFileName() {
+		return mFilePath.getFileName().toString();
+	}
+	
+	@Override
+	public Path getFilePath() {
+		return mFilePath;
+	}
+	
 }

@@ -193,7 +193,13 @@ public class BooleanQueryParser {
 				return negativeLiteral;
 			}
 			String TermLit = subquery.substring(startIndex, startIndex + lengthOut);
-			TokenProcessor TermProcessor = new AdvancedTokenProcessor();
+			TokenProcessor termProcessor = null;
+			try {
+				termProcessor = new AdvancedTokenProcessor();
+			} catch (Throwable e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 
 			EnglishTokenStream TermLits = new EnglishTokenStream(new StringReader(TermLit));
 
@@ -201,7 +207,7 @@ public class BooleanQueryParser {
 			List<String> ProcessedTermLit = new ArrayList<>();
 
 			for (String tokens : TermTokens) {
-				List<String> processedTokens = TermProcessor.processToken(tokens);
+				List<String> processedTokens = termProcessor.processToken(tokens);
 				for (String processedToken : processedTokens) {
 					ProcessedTermLit.add(processedToken);
 				}
@@ -237,14 +243,20 @@ public class BooleanQueryParser {
 				nearK = 1;
 			}
 
-			TokenProcessor PhraseProcessor = new AdvancedTokenProcessor();
+			TokenProcessor phraseProcessor = null;
+			try {
+				phraseProcessor = new AdvancedTokenProcessor();
+			} catch (Throwable e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			EnglishTokenStream PhraseLits = new EnglishTokenStream(new StringReader(PhraseLit));
 
 			Iterable<String> PhraseTokens = PhraseLits.getTokens();
 			List<String> ProcessedPhraseLit = new ArrayList<>();
 
 			for (String tokens : PhraseTokens) {
-				List<String> processedTokens = PhraseProcessor.processToken(tokens);
+				List<String> processedTokens = phraseProcessor.processToken(tokens);
 				for (String processedToken : processedTokens) {
 					ProcessedPhraseLit.add(processedToken);
 				}

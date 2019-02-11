@@ -45,10 +45,12 @@ public class PositionalInvertedIndex implements Index {
 				positions.add(position);
 				Posting p = new Posting(documentId, positions);
 				postingList.add(p);
+				vocabulary.put(term, postingList);
 			} else if (documentId == postingList.get(postingList.size() - 1).getDocumentId()) {
 				// To-Do add to list if otherwise
 				List<Integer> positions = postingList.get(postingList.size() - 1).getPositionsInDoc();
 				positions.add(position);
+				vocabulary.put(term, postingList);
 			}
 
 		} else { // vocabulary doesn't contain the term, add the new term to vocabulary
